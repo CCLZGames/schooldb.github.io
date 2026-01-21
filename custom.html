@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>School Portal</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        input, select, button { margin: 5px; padding: 5px; }
+        .hidden { display: none; }
+        .box { border: 1px solid #ccc; padding: 10px; margin-top: 15px; }
+        ul { padding-left: 20px; }
+    </style>
+</head>
+<body>
+
+<h2>School Portal</h2>
+
+<label>School:</label><br>
+<select id="school"></select>
+
+<hr>
+
+<h3>Register</h3>
+<input id="r_user" placeholder="Username">
+<input id="r_pass" type="password" placeholder="Password">
+<input id="r_name" placeholder="Full name">
+<select id="r_role">
+    <option value="student">Student</option>
+    <option value="teacher">Teacher</option>
+</select>
+<input id="r_grade" placeholder="Class / Grade">
+<button onclick="register()">Register</button>
+
+<hr>
+
+<h3>Login</h3>
+<input id="l_user" placeholder="Username">
+<input id="l_pass" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+
+<p id="output"></p>
+
+<!-- ================= STUDENT VIEW ================= -->
+<div id="studentPanel" class="hidden box">
+    <h3>Your House Points</h3>
+    <p><strong>Total:</strong> <span id="studentTotal"></span></p>
+    <ul id="studentReasons"></ul>
+
+    <h3>Your Attendance</h3>
+    <p><strong>Attendance:</strong> <span id="studentAttendance"></span></p>
+</div>
+
+<!-- ================= TEACHER VIEW ================= -->
+<div id="teacherPanel" class="hidden box">
+
+    <h3>Record Attendance</h3>
+    <select id="attendanceStudent"></select>
+    <select id="attendanceStatus">
+        <option>Present</option>
+        <option>Late</option>
+        <option>Absent</option>
+    </select>
+    <button onclick="markAttendance()">Record</button>
+
+    <hr>
+
+    <h3>Attendance Overview</h3>
+    <p><strong>Selected Student:</strong> <span id="singleAttendance"></span></p>
+    <p><strong>Class Attendance:</strong> <span id="classAttendance"></span></p>
+    <p><strong>School Attendance:</strong> <span id="schoolAttendance"></span></p>
+
+    <hr>
+
+    <h3>House Points</h3>
+    <select id="studentSelect"></select>
+    <input id="hp_points" type="number" placeholder="Points (+/-)">
+    <input id="hp_reason" placeholder="Reason">
+    <button onclick="addPoints()">Add / Remove</button>
+
+</div>
+
+<script src="db.js"></script>
+<script>
+let currentUser = null;
+
+/* ---------- INIT ---------- */
+function loadSchools() {
+    school.innerHTML = "";
+    DB.listDatabases().forEach(s => {
+        const o = document.createElement("option");
+        o.value = s;
+        o.text = s;
+        school.add(o);
+    });
+}
+loadSchools();
+
+/* ---------- REGISTER ---------- */
+function register() {
+    const ok = DB.addUser(school.value, {
+        username: r_user.value,
+        password: r_pass.value,
+        fullName: r_name.value,
+        role: r_role.value,
+        grade: r_grade.value
+    });
+    output.innerText = ok ? "Registered." : "Failed.";
+}
+
+/* ---------- LOGIN ---------- */
+function login() {
+    const user = DB.login(school.value, l_user.value, l_pass.value);
+    if (!user) return output.innerText = "Invalid login.";
+
+    currentUser = user;
+    output.innerText = `Welcome ${user.fullName} (${user.role})`;
+
+    studentPanel.classList.add("hidden");
+    teacherPanel.classList.add("hidden");
+
+    if (user.role === "student") showStudentView();
+    if (user.role === "teacher") {
+        teacherPanel.classList.remove("hidden");
+        loadStudentDropdowns();
+        updateAttendanceStats();
+    }
+}
+
+/* ---------- LOAD STUDENTS ---------- */
+function loadStudentDropdowns() {
+    attendanceStudent.innerHTML = "";
+    studentSelect.innerHTML = "";
+
+    const students = DB.getUsers(school.value).filter(u => u.role === "student");
+
+    students.forEach(s => {
+        attendanceStudent.add(new Option(s.fullName, s.username));
+        studentSelect.add(new Option(s.fullName, s.username));
+    });
+
+    attendanceStudent.onchange = updateAttendanceStats;
+}
+
+/* ---------- STUDENT VIEW ---------- */
+function showStudentView() {
+    const points = DB.getHousePoints(school.value)
+        .filter(r => r.username === currentUser.username);
+
+    let total = 0;
+    studentReasons.innerHTML = "";
+
+    points.forEach(r => {
+        total += r.points;
+        const li = document.createElement("li");
+        li.textContent = `${r.points > 0 ? "+" : ""}${r.points} — ${r.reason}`;
+        studentReasons.appendChild(li);
+    });
+
+    studentTotal.innerText = total;
+    studentAttendance.innerText = calculateAttendance(currentUser.username);
+    studentPanel.classList.remove("hidden");
+}
+
+/* ---------- ATTENDANCE ---------- */
+function markAttendance() {
+    DB.recordAttendance(school.value, {
+        username: attendanceStudent.value,
+        status: attendanceStatus.value,
+        date: new Date().toISOString().split("T")[0],
+        recordedBy: currentUser.username
+    });
+    updateAttendanceStats();
+}
+
+function calculateAttendance(username = null) {
+    const records = DB.getAttendance(school.value);
+    let filtered = username
+        ? records.filter(r => r.username === username)
+        : records;
+
+    if (filtered.length === 0) return "N/A";
+
+    let score = 0;
+    filtered.forEach(r => {
+        if (r.status === "Present") score += 1;
+        if (r.status === "Late") score += 0.5;
+    });
+
+    return ((score / filtered.length) * 100).toFixed(2) + "%";
+}
+
+function updateAttendanceStats() {
+    singleAttendance.innerText =
+        calculateAttendance(attendanceStudent.value);
+
+    classAttendance.innerText =
+        calculateAttendance();
+
+    schoolAttendance.innerText =
+        calculateAttendance();
+}
+
+/* ---------- HOUSE POINTS ---------- */
+function addPoints() {
+    DB.addHousePoints(school.value, {
+        username: studentSelect.value,
+        points: Number(hp_points.value),
+        reason: hp_reason.value || "No reason",
+        date: new Date().toISOString().split("T")[0],
+        recordedBy: currentUser.username
+    });
+    hp_points.value = "";
+    hp_reason.value = "";
+}
+</script>
+
+</body>
+</html>

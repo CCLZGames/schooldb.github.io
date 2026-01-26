@@ -1,217 +1,225 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>School Portal</title>
-    <style>
-        body { font-family: Arial; margin: 40px; }
-        input, select, button { margin: 5px; padding: 5px; }
-        .hidden { display: none; }
-        .box { border: 1px solid #ccc; padding: 10px; margin-top: 15px; }
-        ul { padding-left: 20px; }
-    </style>
+<meta charset="UTF-8">
+<title>School Portal</title>
+
+<style>
+:root {
+    --bg: #eef2ff;
+    --card: #ffffff;
+    --primary: #4f46e5;
+    --accent: #22c55e;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e5e7eb;
+}
+
+* {
+    font-family: system-ui;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+    margin: 0;
+    padding: 30px;
+    color: var(--text);
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+.card {
+    background: var(--card);
+    border-radius: 18px;
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+}
+
+h2, h3 {
+    margin-top: 0;
+}
+
+input, select {
+    width: 100%;
+    padding: 11px;
+    margin-top: 8px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.stat {
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.hidden { display: none; }
+.small { color: var(--muted); font-size: 14px; }
+.divider { height: 1px; background: var(--border); margin: 15px 0; }
+</style>
 </head>
+
 <body>
+<div class="container">
 
-<h2>School Portal</h2>
+<h2>🏫 School Portal</h2>
 
-<label>School:</label><br>
-<select id="school"></select>
+<div class="card">
+    <label>School</label>
+    <select id="school"></select>
 
-<hr>
+    <div class="divider"></div>
 
-<h3>Register</h3>
-<input id="r_user" placeholder="Username">
-<input id="r_pass" type="password" placeholder="Password">
-<input id="r_name" placeholder="Full name">
-<select id="r_role">
-    <option value="student">Student</option>
-    <option value="teacher">Teacher</option>
-</select>
-<input id="r_grade" placeholder="Class / Grade">
-<button onclick="register()">Register</button>
+    <h3>Register</h3>
+    <input id="r_user" placeholder="Username">
+    <input id="r_pass" type="password" placeholder="Password">
+    <input id="r_name" placeholder="Full name">
+    <select id="r_role">
+        <option value="student">Student</option>
+        <option value="teacher">Teacher</option>
+    </select>
+    <select id="r_class"></select>
+    <button onclick="register()">Create account</button>
 
-<hr>
+    <div class="divider"></div>
 
-<h3>Login</h3>
-<input id="l_user" placeholder="Username">
-<input id="l_pass" type="password" placeholder="Password">
-<button onclick="login()">Login</button>
+    <h3>Login</h3>
+    <input id="l_user" placeholder="Username">
+    <input id="l_pass" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
 
-<p id="output"></p>
-
-<!-- ================= STUDENT VIEW ================= -->
-<div id="studentPanel" class="hidden box">
-    <h3>Your House Points</h3>
-    <p><strong>Total:</strong> <span id="studentTotal"></span></p>
-    <ul id="studentReasons"></ul>
-
-    <h3>Your Attendance</h3>
-    <p><strong>Attendance:</strong> <span id="studentAttendance"></span></p>
+    <p id="msg" class="small"></p>
 </div>
 
-<!-- ================= TEACHER VIEW ================= -->
-<div id="teacherPanel" class="hidden box">
+<div id="studentPanel" class="card hidden">
+    <h3>🎓 Student Dashboard</h3>
+    <p class="small">House points</p>
+    <div class="stat" id="s_points">0</div>
 
-    <h3>Record Attendance</h3>
-    <select id="attendanceStudent"></select>
-    <select id="attendanceStatus">
-        <option>Present</option>
-        <option>Late</option>
-        <option>Absent</option>
-    </select>
-    <button onclick="markAttendance()">Record</button>
+    <div class="divider"></div>
 
-    <hr>
+    <p class="small">Attendance</p>
+    <div class="stat" id="s_attendance">N/A</div>
+</div>
 
-    <h3>Attendance Overview</h3>
-    <p><strong>Selected Student:</strong> <span id="singleAttendance"></span></p>
-    <p><strong>Class Attendance:</strong> <span id="classAttendance"></span></p>
-    <p><strong>School Attendance:</strong> <span id="schoolAttendance"></span></p>
+<div id="teacherPanel" class="hidden">
+    <div class="card">
+        <h3>📅 Attendance</h3>
+        <select id="studentSelect"></select>
+        <select id="status">
+            <option>Present</option>
+            <option>Late</option>
+            <option>Absent</option>
+        </select>
+        <button onclick="mark()">Record</button>
+    </div>
 
-    <hr>
-
-    <h3>House Points</h3>
-    <select id="studentSelect"></select>
-    <input id="hp_points" type="number" placeholder="Points (+/-)">
-    <input id="hp_reason" placeholder="Reason">
-    <button onclick="addPoints()">Add / Remove</button>
+    <div class="card">
+        <h3>⭐ House Points</h3>
+        <input id="pts" type="number" placeholder="Points (+ or -)">
+        <input id="reason" placeholder="Reason">
+        <button onclick="points()">Update</button>
+    </div>
+</div>
 
 </div>
 
 <script src="db.js"></script>
 <script>
-let currentUser = null;
+let user;
 
-/* ---------- INIT ---------- */
 function loadSchools() {
     school.innerHTML = "";
-    DB.listDatabases().forEach(s => {
-        const o = document.createElement("option");
-        o.value = s;
-        o.text = s;
-        school.add(o);
-    });
+    DB.listDatabases().forEach(s => school.add(new Option(s, s)));
+    loadClasses();
 }
 loadSchools();
 
-/* ---------- REGISTER ---------- */
+school.onchange = loadClasses;
+
+function loadClasses() {
+    r_class.innerHTML = "";
+    DB.getClasses(school.value).forEach(c => r_class.add(new Option(c, c)));
+}
+
 function register() {
-    const ok = DB.addUser(school.value, {
+    DB.addUser(school.value, {
         username: r_user.value,
         password: r_pass.value,
         fullName: r_name.value,
         role: r_role.value,
-        grade: r_grade.value
+        class: r_class.value
     });
-    output.innerText = ok ? "Registered." : "Failed.";
+    msg.innerText = "Account created";
 }
 
-/* ---------- LOGIN ---------- */
 function login() {
-    const user = DB.login(school.value, l_user.value, l_pass.value);
-    if (!user) return output.innerText = "Invalid login.";
-
-    currentUser = user;
-    output.innerText = `Welcome ${user.fullName} (${user.role})`;
+    user = DB.login(school.value, l_user.value, l_pass.value);
+    if (!user) return msg.innerText = "Invalid login";
 
     studentPanel.classList.add("hidden");
     teacherPanel.classList.add("hidden");
 
-    if (user.role === "student") showStudentView();
-    if (user.role === "teacher") {
-        teacherPanel.classList.remove("hidden");
-        loadStudentDropdowns();
-        updateAttendanceStats();
-    }
+    user.role === "student" ? showStudent() : showTeacher();
 }
 
-/* ---------- LOAD STUDENTS ---------- */
-function loadStudentDropdowns() {
-    attendanceStudent.innerHTML = "";
+function showStudent() {
+    studentPanel.classList.remove("hidden");
+
+    const pts = DB.getHousePoints(school.value)
+        .filter(p => p.username === user.username)
+        .reduce((a,b)=>a+b.points,0);
+
+    const att = DB.getAttendance(school.value)
+        .filter(a => a.username === user.username);
+
+    const percent = att.length
+        ? Math.round(att.filter(a=>a.status==="Present").length / att.length * 100)
+        : "N/A";
+
+    s_points.innerText = pts;
+    s_attendance.innerText = percent + "%";
+}
+
+function showTeacher() {
+    teacherPanel.classList.remove("hidden");
     studentSelect.innerHTML = "";
 
-    const students = DB.getUsers(school.value).filter(u => u.role === "student");
-
-    students.forEach(s => {
-        attendanceStudent.add(new Option(s.fullName, s.username));
-        studentSelect.add(new Option(s.fullName, s.username));
-    });
-
-    attendanceStudent.onchange = updateAttendanceStats;
+    DB.getUsers(school.value)
+        .filter(u => u.role === "student" && u.class === user.class)
+        .forEach(s => studentSelect.add(new Option(s.fullName, s.username)));
 }
 
-/* ---------- STUDENT VIEW ---------- */
-function showStudentView() {
-    const points = DB.getHousePoints(school.value)
-        .filter(r => r.username === currentUser.username);
-
-    let total = 0;
-    studentReasons.innerHTML = "";
-
-    points.forEach(r => {
-        total += r.points;
-        const li = document.createElement("li");
-        li.textContent = `${r.points > 0 ? "+" : ""}${r.points} — ${r.reason}`;
-        studentReasons.appendChild(li);
-    });
-
-    studentTotal.innerText = total;
-    studentAttendance.innerText = calculateAttendance(currentUser.username);
-    studentPanel.classList.remove("hidden");
-}
-
-/* ---------- ATTENDANCE ---------- */
-function markAttendance() {
+function mark() {
     DB.recordAttendance(school.value, {
-        username: attendanceStudent.value,
-        status: attendanceStatus.value,
-        date: new Date().toISOString().split("T")[0],
-        recordedBy: currentUser.username
+        username: studentSelect.value,
+        status: status.value,
+        date: new Date().toISOString().split("T")[0]
     });
-    updateAttendanceStats();
 }
 
-function calculateAttendance(username = null) {
-    const records = DB.getAttendance(school.value);
-    let filtered = username
-        ? records.filter(r => r.username === username)
-        : records;
-
-    if (filtered.length === 0) return "N/A";
-
-    let score = 0;
-    filtered.forEach(r => {
-        if (r.status === "Present") score += 1;
-        if (r.status === "Late") score += 0.5;
-    });
-
-    return ((score / filtered.length) * 100).toFixed(2) + "%";
-}
-
-function updateAttendanceStats() {
-    singleAttendance.innerText =
-        calculateAttendance(attendanceStudent.value);
-
-    classAttendance.innerText =
-        calculateAttendance();
-
-    schoolAttendance.innerText =
-        calculateAttendance();
-}
-
-/* ---------- HOUSE POINTS ---------- */
-function addPoints() {
+function points() {
     DB.addHousePoints(school.value, {
         username: studentSelect.value,
-        points: Number(hp_points.value),
-        reason: hp_reason.value || "No reason",
-        date: new Date().toISOString().split("T")[0],
-        recordedBy: currentUser.username
+        points: Number(pts.value),
+        reason: reason.value
     });
-    hp_points.value = "";
-    hp_reason.value = "";
 }
 </script>
-
 </body>
 </html>

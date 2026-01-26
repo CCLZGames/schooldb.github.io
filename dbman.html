@@ -1,62 +1,172 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>School Database Manager</title>
-    <style>
-        body { font-family: Arial; margin: 40px; }
-        input, button { margin: 5px; padding: 5px; }
-        pre { background: #f4f4f4; padding: 10px; }
-        .school { border: 1px solid #ccc; padding: 10px; margin-top: 15px; }
-    </style>
+<meta charset="UTF-8">
+<title>Database Manager</title>
+
+<style>
+:root {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --primary: #6366f1;
+    --danger: #ef4444;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e5e7eb;
+}
+
+* {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+    margin: 0;
+    padding: 40px;
+    color: var(--text);
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+.card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+}
+
+h2, h3 {
+    margin-top: 0;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+button {
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+button.danger {
+    background: var(--danger);
+}
+
+.school {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+pre {
+    background: #020617;
+    color: #e5e7eb;
+    padding: 15px;
+    border-radius: 12px;
+    overflow: auto;
+}
+</style>
 </head>
+
 <body>
+<div class="container">
 
-<h2>School Database Manager</h2>
+<h2>🗂️ Database Manager</h2>
 
-<input id="dbname" placeholder="School name">
-<button onclick="createSchool()">Create</button>
-<button onclick="deleteSchool()">Delete</button>
-<button onclick="refresh()">Refresh</button>
+<div class="card">
+    <h3>Create School</h3>
+    <input id="schoolName" placeholder="School name">
+    <button onclick="createSchool()">Create</button>
+</div>
 
-<p id="output"></p>
-<div id="schools"></div>
+<div class="card">
+    <h3>Create Class</h3>
+    <select id="schoolSelect"></select>
+    <input id="className" placeholder="Class (e.g. S1)">
+    <button onclick="addClass()">Add Class</button>
+</div>
+
+<div class="card">
+    <h3>Schools</h3>
+    <div id="schools"></div>
+</div>
+
+<div class="card">
+    <h3>📄 JSON Viewer</h3>
+    <pre id="json"></pre>
+</div>
+
+<div class="card">
+    <h3>⚠️ Danger Zone</h3>
+    <button class="danger" onclick="resetAll()">Reset EVERYTHING</button>
+</div>
+
+</div>
 
 <script src="db.js"></script>
 <script>
-function createSchool() {
-    output.innerText = DB.createDatabase(dbname.value)
-        ? "School created."
-        : "School already exists.";
-    refresh();
-}
-
-function deleteSchool() {
-    output.innerText = DB.deleteDatabase(dbname.value)
-        ? "School deleted."
-        : "School not found.";
-    refresh();
-}
-
 function refresh() {
     schools.innerHTML = "";
+    schoolSelect.innerHTML = "";
 
-    DB.listDatabases().forEach(name => {
+    DB.listDatabases().forEach(s => {
         schools.innerHTML += `
             <div class="school">
-                <h3>${name}</h3>
-                <strong>Users</strong>
-                <pre>${JSON.stringify(DB.getUsers(name), null, 2)}</pre>
-                <strong>Attendance</strong>
-                <pre>${JSON.stringify(DB.getAttendance(name), null, 2)}</pre>
-                <strong>House Points</strong>
-                <pre>${JSON.stringify(DB.getHousePoints(name), null, 2)}</pre>
+                <b>${s}</b>
+                <div>
+                    <button onclick="view('${s}')">View</button>
+                    <button class="danger" onclick="del('${s}')">Delete</button>
+                </div>
             </div>
         `;
+        schoolSelect.add(new Option(s, s));
     });
+}
+
+function createSchool() {
+    DB.createDatabase(schoolName.value);
+    schoolName.value = "";
+    refresh();
+}
+
+function addClass() {
+    DB.addClass(schoolSelect.value, className.value);
+    className.value = "";
+}
+
+function view(s) {
+    json.textContent = JSON.stringify(DB.load()[s], null, 2);
+}
+
+function del(s) {
+    DB.deleteDatabase(s);
+    json.textContent = "";
+    refresh();
+}
+
+function resetAll() {
+    DB.resetAll();
+    json.textContent = "";
+    refresh();
 }
 
 refresh();
 </script>
-
 </body>
 </html>

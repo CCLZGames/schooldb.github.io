@@ -1,96 +1,89 @@
 const DB = {
-    _key: "DATABASE_SYSTEM",
-
-    _getSystem() {
-        return JSON.parse(localStorage.getItem(this._key)) || { databases: {} };
+    load() {
+        return JSON.parse(localStorage.getItem("schoolDB") || "{}");
     },
 
-    _saveSystem(system) {
-        localStorage.setItem(this._key, JSON.stringify(system));
+    save(data) {
+        localStorage.setItem("schoolDB", JSON.stringify(data));
     },
 
-    /* ---------- DATABASES ---------- */
+    resetAll() {
+        localStorage.removeItem("schoolDB");
+    },
+
+    /* ---------- SCHOOLS ---------- */
+    listDatabases() {
+        return Object.keys(this.load());
+    },
+
     createDatabase(name) {
-        const system = this._getSystem();
-        if (system.databases[name]) return false;
-
-        system.databases[name] = {
-            users: [],
-            attendance: [],
-            housePoints: []
-        };
-
-        this._saveSystem(system);
-        return true;
+        const db = this.load();
+        if (!db[name]) {
+            db[name] = {
+                classes: [],
+                users: [],
+                attendance: [],
+                housePoints: []
+            };
+            this.save(db);
+        }
     },
 
     deleteDatabase(name) {
-        const system = this._getSystem();
-        if (!system.databases[name]) return false;
-
-        delete system.databases[name];
-        this._saveSystem(system);
-        return true;
+        const db = this.load();
+        delete db[name];
+        this.save(db);
     },
 
-    listDatabases() {
-        return Object.keys(this._getSystem().databases);
+    /* ---------- CLASSES ---------- */
+    addClass(school, className) {
+        const db = this.load();
+        if (!db[school].classes.includes(className)) {
+            db[school].classes.push(className);
+            this.save(db);
+        }
+    },
+
+    getClasses(school) {
+        return this.load()[school]?.classes || [];
     },
 
     /* ---------- USERS ---------- */
-    addUser(dbName, user) {
-        const system = this._getSystem();
-        const db = system.databases[dbName];
-        if (!db) return false;
-
-        if (db.users.find(u => u.username === user.username)) return false;
-
-        db.users.push(user);
-        this._saveSystem(system);
-        return true;
+    addUser(school, user) {
+        const db = this.load();
+        db[school].users.push(user);
+        this.save(db);
     },
 
-    getUsers(dbName) {
-        return this._getSystem().databases[dbName]?.users || [];
-    },
-
-    /* ---------- AUTH ---------- */
-    login(dbName, username, password) {
-        const db = this._getSystem().databases[dbName];
-        if (!db) return null;
-
-        return db.users.find(
+    login(school, username, password) {
+        return this.load()[school]?.users.find(
             u => u.username === username && u.password === password
-        ) || null;
+        );
+    },
+
+    getUsers(school) {
+        return this.load()[school]?.users || [];
     },
 
     /* ---------- ATTENDANCE ---------- */
-    recordAttendance(dbName, record) {
-        const system = this._getSystem();
-        const db = system.databases[dbName];
-        if (!db) return false;
-
-        db.attendance.push(record);
-        this._saveSystem(system);
-        return true;
+    recordAttendance(school, record) {
+        const db = this.load();
+        db[school].attendance.push(record);
+        this.save(db);
     },
 
-    getAttendance(dbName) {
-        return this._getSystem().databases[dbName]?.attendance || [];
+    getAttendance(school) {
+        return this.load()[school]?.attendance || [];
     },
 
     /* ---------- HOUSE POINTS ---------- */
-    addHousePoints(dbName, record) {
-        const system = this._getSystem();
-        const db = system.databases[dbName];
-        if (!db) return false;
-
-        db.housePoints.push(record);
-        this._saveSystem(system);
-        return true;
+    addHousePoints(school, record) {
+        const db = this.load();
+        db[school].housePoints.push(record);
+        this.save(db);
     },
 
-    getHousePoints(dbName) {
-        return this._getSystem().databases[dbName]?.housePoints || [];
+    getHousePoints(school) {
+        return this.load()[school]?.housePoints || [];
     }
 };
